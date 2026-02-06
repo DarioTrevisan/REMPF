@@ -1,0 +1,26 @@
+{
+    "id": "10742EA2",
+    "path": "~/python/REMPF/tests/test_smoke.py",
+    "project_path": "tests/test_smoke.py",
+    "type": "python",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1770395953609.0,
+    "source_on_save": false,
+    "relative_order": 11,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "9,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1770395955,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1770395955239,
+    "read_only": false,
+    "read_only_alternatives": []
+}

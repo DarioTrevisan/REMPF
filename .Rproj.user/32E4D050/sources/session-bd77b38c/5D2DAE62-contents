@@ -1,0 +1,49 @@
+
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+pip-wheel-metadata/
+
+# Virtual envs
+.venv/
+venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Data / outputs
+data/*
+results/*
+!data/.gitkeep
+!results/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Figures
+figs/
+*.pdf
+*.png
+*.svg
+
+# Profiling
+.prof
+*.prof
+
+# Rstudio project file
+
+REMPF.Rproj

@@ -1,0 +1,26 @@
+{
+    "id": "ADCFB670",
+    "path": "~/python/REMPF/pyproject.toml",
+    "project_path": "pyproject.toml",
+    "type": "toml",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1770395703605.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "34,0",
+        "scrollLine": "11"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1770395704,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1770395704952,
+    "read_only": false,
+    "read_only_alternatives": []
+}

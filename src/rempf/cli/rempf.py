@@ -1,0 +1,12 @@
+from __future__ import annotations
+import argparse
+from rempf.cli.match import add_match_subparser
+
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="rempf")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    add_match_subparser(sub)
+
+    args = parser.parse_args()
+    args.func(args)
