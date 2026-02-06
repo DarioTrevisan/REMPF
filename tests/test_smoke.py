@@ -6,4 +6,5 @@ def test_exact_cost_nonnegative():
     x = rng.random((20, 2))
     y = rng.random((20, 2))
     c = bipartite_matching_cost_exact(x, y, p=1.0)
+    print(c)
     assert c >= 0.0
