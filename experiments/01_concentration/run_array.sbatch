@@ -1,12 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=rempf
-#SBATCH --partition=cpu
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-#SBATCH --time=08:00:00
-#SBATCH --array=1-999%20
-#SBATCH --output=logs/%x-%A_%a.out
-#SBATCH --error=logs/%x-%A_%a.err
+#SBATCH --job-name=rempf                   # Nome del job
+#SBATCH --mail-type=END,FAIL                    # Eventi E-mail (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-user=dario.trevisan@unipi.it           # Dove inviare la mail con gli esiti
+#SBATCH --nodes=1                               # Richiediamo un singolo nodo
+#SBATCH --ntasks=1                              # Che deve eseguire una sola task
+#SBATCH --cpus-per-task=2                  # Utilizzando X CPUs
+#SBATCH --time=24:00:00                         # Per cui richiediamo 24 ore
+#SBATCH --output=logs/%x-%j.out
+#SBATCH --error=logs/%x-%j.err
 
 set -euo pipefail
 
