@@ -4,12 +4,16 @@
 #SBATCH --mail-user=dario.trevisan@unipi.it           # Dove inviare la mail con gli esiti
 #SBATCH --nodes=1                               # Richiediamo un singolo nodo
 #SBATCH --ntasks=1                              # Che deve eseguire una sola task
-#SBATCH --cpus-per-task=2                  # Utilizzando X CPUs
+#SBATCH --cpus-per-task=8                  # Utilizzando X CPUs
 #SBATCH --time=24:00:00                         # Per cui richiediamo 24 ore
 #SBATCH --output=logs/%x-%j.out
 #SBATCH --error=logs/%x-%j.err
+#SBATCH --array=1-5%2
+
 
 set -euo pipefail
+
+echo "Dario"
 
 # ---------- config ----------
 JOBS_FILE="experiments/01_concentration/jobs.txt"
@@ -19,7 +23,9 @@ LOGS_DIR="logs"
 mkdir -p "$RESULTS_DIR" "$LOGS_DIR"
 
 # Stop if array index exceeds number of non-comment lines
-LINE=$(awk 'NF && $1 !~ /^#/ {print NR ":" $0}' "$JOBS_FILE" | sed -n "${SLURM_ARRAY_TASK_ID}p" || true)
+TASK_ID="${SLURM_ARRAY_TASK_ID:-1}"
+LINE=$(awk 'NF && $1 !~ /^#/ {print NR ":" $0}' "$JOBS_FILE" | sed -n "${TASK_ID}p" || true)
+
 if [[ -z "${LINE}" ]]; then
   echo "No job line for SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}. Exiting."
   exit 0
@@ -54,7 +60,8 @@ which rempf
 rempf --help >/dev/null
 
 # ---------- run ----------
-STAMP="${TYPE}_d${DIM}_p${P_OPT}_seed${SEED}_task${SLURM_ARRAY_TASK_ID}"
+STAMP="${TYPE}_d${DIM}_p${P_OPT}_seed${SEED}_task${TASK_ID}"
+
 
 if [[ "$TYPE" == "sweep" ]]; then
   OUT_NPZ="${RESULTS_DIR}/${STAMP}.npz"
