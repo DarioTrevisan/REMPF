@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Any
 import numpy as np
+from tqdm.auto import tqdm
 
 from rempf.core.points import sample_uniform
 from rempf.core.matching.exact import solve_perm_exact, eval_cost_given_perm
@@ -16,6 +17,7 @@ class MatchMCConfig:
     trials: int
     seed: int
     domain: str = "cube"        # future-proof: "cube" or "torus"
+    progress: bool = False
 
 
 def run_matching_mc(cfg: MatchMCConfig) -> Dict[str, Any]:
@@ -23,7 +25,11 @@ def run_matching_mc(cfg: MatchMCConfig) -> Dict[str, Any]:
 
     costs = np.empty((cfg.trials, len(cfg.q_eval)), dtype=float)
 
-    for t in range(cfg.trials):
+    trial_iter = range(cfg.trials)
+    if cfg.progress:
+        trial_iter = tqdm(trial_iter, desc=f"match trials n={cfg.n}", leave=False)
+
+    for t in trial_iter:
         # for now: cube only; torus can be added later in distance metric
         x = sample_uniform(cfg.n, cfg.dim, rng=rng)
         y = sample_uniform(cfg.n, cfg.dim, rng=rng)
@@ -42,4 +48,3 @@ def run_matching_mc(cfg: MatchMCConfig) -> Dict[str, Any]:
         "seed": int(cfg.seed),
         "domain": cfg.domain,
     }
-

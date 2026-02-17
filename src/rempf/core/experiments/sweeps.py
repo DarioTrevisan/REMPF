@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Any
 import numpy as np
+from tqdm.auto import tqdm
 
 from rempf.core.experiments.matching_mc import MatchMCConfig, run_matching_mc
 
@@ -15,13 +16,18 @@ class SweepConfig:
     trials: int
     seed: int
     domain: str = "cube"
+    progress: bool = False
 
 
 def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
     all_costs = []
 
     # deterministic seed schedule per n
-    for k, n in enumerate(cfg.n_list):
+    n_iter = cfg.n_list
+    if cfg.progress:
+        n_iter = tqdm(n_iter, desc="match n-grid")
+
+    for k, n in enumerate(n_iter):
         res = run_matching_mc(
             MatchMCConfig(
                 n=n,
@@ -31,6 +37,7 @@ def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
                 trials=cfg.trials,
                 seed=cfg.seed + 1000 * k,
                 domain=cfg.domain,
+                progress=cfg.progress,
             )
         )
         all_costs.append(res["costs"])  # (trials, nq)
@@ -45,4 +52,3 @@ def run_sweep(cfg: SweepConfig) -> Dict[str, Any]:
         "domain": cfg.domain,
         "costs": np.stack(all_costs, axis=0),  # (Nn, trials, nq)
     }
-

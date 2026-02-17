@@ -1,17 +1,7 @@
 # REMPF — Random Euclidean Matching Problem & Friends
 
-Numerical experiments for Random Euclidean (bipartite) Matching and related problems
-(e.g. TSP), with an emphasis on **reproducibility**, **validation**, and
-cross-checking **exact solvers vs heuristics**.
-
-## Goals
-
-- Reproducible Monte Carlo experiments (fixed seeds, saved configs + metadata).
-- Multiple solvers per problem:
-  - exact / robust reference solvers (when feasible)
-  - fast heuristics for larger n
-  - cross-validation between approaches
-- Standardized output format (`.npz`) + plotting scripts.
+Numerical experiments for Random Euclidean bipartite matching and Euclidean TSP,
+with emphasis on reproducibility and scaling comparisons across exponents.
 
 ## Installation (dev)
 
@@ -22,40 +12,86 @@ pip install -U pip
 pip install -e ".[dev]"
 ```
 
-
-## Quick start
-Bipartite matching (smoke test)
+## CLI overview
 
 ```bash
-rempf match run \
-  --n 200 --dim 2 --trials 5 --seed 0 \
-  --solver exact \
-  --out results/match_exact_smoke.npz
+rempf match {sweep,plot-sweep,edge-dist}
+rempf tsp {sweep,plot-sweep}
 ```
 
-Plot a saved run
+## Matching sweep
+
+Compute p-optimal matching, then evaluate q-costs on the same optimizer.
 
 ```bash
-rempf match plot results/match_exact_smoke.npz --out results/match_exact_smoke.pdf
+rempf match sweep \
+  --dim 3 --p-opt 1 --q-eval 1,2,3 \
+  --n-list 64,128,256,512 --trials 100 --seed 0 \
+  --progress \
+  --out results/match_sweep_d3_p1_q123.npz
 ```
 
-## Output format
+Plot with error bars at sampled points:
 
-All commands save a .npz that contains:
+```bash
+rempf match plot-sweep results/match_sweep_d3_p1_q123.npz \
+  --out-norm results/match_sweep_d3_p1_q123_norm.pdf \
+  --out-conc results/match_sweep_d3_p1_q123_conc.pdf \
+  --out-var results/match_sweep_d3_p1_q123_var.pdf \
+  --error-bars se
+```
 
-- costs: array of per-trial costs
-- params: JSON-serializable dict of CLI parameters
-- meta: git commit hash, timestamp, platform, python version, etc.
+## TSP sweep
+
+Compute a p-optimal route (exact when feasible, heuristic fallback if enabled),
+then evaluate q-costs on that same route.
+
+```bash
+rempf tsp sweep \
+  --dim 4 --p-opt 4 --q-eval 4,5,6 \
+  --n-list 64,128,256 \
+  --trials 6 --seed 0 \
+  --milp-max-n 0 \
+  --heuristic-starts 32 \
+  --allow-heuristic-fallback \
+  --progress \
+  --out results/tsp_sweep_d4_p4_q456.npz
+```
+
+```bash
+rempf tsp plot-sweep results/tsp_sweep_d4_p4_q456.npz \
+  --out-norm results/tsp_sweep_d4_p4_q456_norm.pdf \
+  --out-conc results/tsp_sweep_d4_p4_q456_conc.pdf \
+  --out-var results/tsp_sweep_d4_p4_q456_var.pdf \
+  --error-bars se
+```
+
+## Output files
+
+`*sweep` commands write:
+
+- `.npz` arrays (cost tensors, parameters, metadata)
+- `.json` sidecar summary (n values, exponents, trials, solver settings, methods used)
+
+By default the sidecar path is the same as `--out` with `.json` extension;
+you can override it with `--out-json`.
+
+`plot-sweep` writes `.pdf` figures:
+
+- normalized scaling plot
+- concentration plot (`std/mean`)
+- optional variance plot
+
+## Notes on TSP accuracy
+
+- For small `n`, exact methods are used (Held-Karp / MILP when available).
+- For larger `n`, enable `--allow-heuristic-fallback`.
+- Increase `--heuristic-starts` to improve route quality (higher runtime).
 
 ## Project structure
 
-- src/rempf/core/: algorithms and problem definitions
-- src/rempf/cli/: command-line entrypoints
-- src/rempf/plots/: plotting utilities
-- tests/: correctness/invariants tests
-- experiments/: scripts used to generate figures
-
-
-## Citation
-
-If you use this code in academic work, please cite (TBD).
+- `src/rempf/core/`: algorithms and experiment runners
+- `src/rempf/cli/`: command-line interfaces
+- `src/rempf/plots/`: plotting utilities
+- `src/rempf/io/`: save/load helpers for `.npz`
+- `tests/`: tests

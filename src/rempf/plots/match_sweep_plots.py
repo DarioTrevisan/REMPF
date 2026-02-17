@@ -1,8 +1,23 @@
 from __future__ import annotations
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedLocator, FuncFormatter, NullLocator
 import numpy as np
 
 from rempf.core.scaling import r_dp
+
+def _set_sparse_n_ticks(n_list: np.ndarray, max_ticks: int = 5) -> None:
+    n_list = np.asarray(n_list)
+    if n_list.size == 0:
+        return
+    if n_list.size <= max_ticks:
+        ticks = n_list
+    else:
+        idx = np.linspace(0, n_list.size - 1, max_ticks, dtype=int)
+        ticks = n_list[np.unique(idx)]
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(FixedLocator(ticks))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{int(round(x))}"))
+    ax.xaxis.set_minor_locator(NullLocator())
 
 
 def plot_sweep_normalized(
@@ -14,6 +29,7 @@ def plot_sweep_normalized(
     title: str,
     out: str,
     quantiles=(0.1, 0.9),
+    error_bars: str = "none",
 ) -> None:
     """
     costs: shape (Nn, trials, nq)
@@ -31,8 +47,6 @@ def plot_sweep_normalized(
     if nq != len(q_eval):
         raise ValueError(f"q_eval has len {len(q_eval)} but costs has nq={nq}")
 
-    qlo, qhi = quantiles
-
     plt.figure()
 
     for j, q in enumerate(q_eval):
@@ -41,13 +55,18 @@ def plot_sweep_normalized(
         norm = costs[:, :, j] / scales[:, None]  # (Nn, T)
 
         mean = norm.mean(axis=1)                    # (Nn,)
-        lo = np.quantile(norm, qlo, axis=1)         # (Nn,)
-        hi = np.quantile(norm, qhi, axis=1)         # (Nn,)
-
         plt.plot(n_list, mean, marker="o", label=f"q={q:g}")
-        plt.fill_between(n_list, lo, hi, alpha=0.2)
+        if error_bars != "none":
+            if error_bars == "std":
+                yerr = norm.std(axis=1, ddof=1) if T > 1 else np.zeros_like(mean)
+            elif error_bars == "se":
+                yerr = (norm.std(axis=1, ddof=1) / np.sqrt(T)) if T > 1 else np.zeros_like(mean)
+            else:
+                raise ValueError("error_bars must be one of: none, std, se")
+            plt.errorbar(n_list, mean, yerr=yerr, fmt="none", capsize=3, alpha=0.7)
 
     plt.xscale("log")
+    _set_sparse_n_ticks(n_list)
     plt.xlabel("n")
     plt.ylabel("cost / r(d,q)(n)")
     plt.title(title)
@@ -84,6 +103,7 @@ def plot_sweep_concentration(
         plt.plot(n_list, rel, marker="o", label=f"q={q:g}")
 
     plt.xscale("log")
+    _set_sparse_n_ticks(n_list)
     plt.yscale("log")
     plt.xlabel("n")
     plt.ylabel("std/mean")
@@ -117,6 +137,7 @@ def plot_sweep_variance(
         plt.plot(n_list, vars_, marker="o", label=f"q={q:g}")
 
     plt.xscale("log")
+    _set_sparse_n_ticks(n_list)
     plt.yscale("log")
     plt.xlabel("n")
     plt.ylabel("Var(cost / r(d,q)(n))")
@@ -125,4 +146,3 @@ def plot_sweep_variance(
     plt.tight_layout()
     plt.savefig(out)
     plt.close()
-

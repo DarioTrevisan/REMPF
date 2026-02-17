@@ -1,5 +1,7 @@
 from __future__ import annotations
 import argparse
+import json
+from pathlib import Path
 import numpy as np
 
 from rempf.core.experiments.sweeps import SweepConfig, run_sweep
@@ -30,6 +32,13 @@ def add_match_subparser(sub):
     sweep.add_argument("--seed", type=int, default=0)
     sweep.add_argument("--domain", choices=["cube"], default="cube")
     sweep.add_argument("--out", type=str, required=True)
+    sweep.add_argument("--progress", action="store_true", help="Show progress bars")
+    sweep.add_argument(
+        "--out-json",
+        type=str,
+        default=None,
+        help="Optional sidecar JSON path (default: same stem as --out with .json)",
+    )
     sweep.set_defaults(func=cmd_sweep)
 
     # --- plot sweep ---
@@ -40,6 +49,12 @@ def add_match_subparser(sub):
     ps.add_argument("--out-conc", type=str, required=True, help="Output PDF for concentration plot (std/mean)")
     ps.add_argument("--out-var", type=str, default=None, help="Optional PDF for variance plot")
     ps.add_argument("--quantiles", type=str, default="0.1,0.9", help="Two quantiles for band, e.g. 0.1,0.9")
+    ps.add_argument(
+        "--error-bars",
+        choices=["none", "std", "se"],
+        default="none",
+        help="Optional error bars around mean normalized curve",
+    )
     ps.set_defaults(func=cmd_plot_sweep)
     
     # --- edge dist ---
@@ -51,6 +66,12 @@ def add_match_subparser(sub):
     ed.add_argument("--trials", type=int, default=10)
     ed.add_argument("--seed", type=int, default=0)
     ed.add_argument("--out", type=str, required=True, help="Output .npz (stores pooled edge lengths)")
+    ed.add_argument(
+        "--out-json",
+        type=str,
+        default=None,
+        help="Optional sidecar JSON path (default: same stem as --out with .json)",
+    )
     ed.add_argument("--plot", type=str, required=True, help="Output PDF for histogram/CCDF")
     ed.add_argument("--bins", type=int, default=80)
     ed.add_argument("--ccdf", action="store_true", help="Plot CCDF instead of histogram")
@@ -70,6 +91,7 @@ def cmd_sweep(args: argparse.Namespace) -> None:
         trials=args.trials,
         seed=args.seed,
         domain=args.domain,
+        progress=bool(args.progress),
     )
     res = run_sweep(cfg)
 
@@ -90,9 +112,35 @@ def cmd_sweep(args: argparse.Namespace) -> None:
             "n_list": res["n_list"],
             "q_eval": res["q_eval"],
             "costs": res["costs"],
+            "method_used": np.full((len(res["n_list"]), res["trials"]), "hungarian", dtype="U32"),
+            "optimality_certified": np.full((len(res["n_list"]), res["trials"]), True, dtype=bool),
         },
         params=params,
     )
+
+    out_json = args.out_json or str(Path(args.out).with_suffix(".json"))
+    summary = {
+        "notes": [
+            "Monte Carlo sweep over two i.i.d. random point clouds in [0,1]^d.",
+            "For each instance pair, matching is optimized for p_opt then evaluated at all q_eval.",
+            "Optimality is certified by exact linear assignment solver (Hungarian).",
+        ],
+        "problem": "bipartite_matching_sweep",
+        "n_values": [int(x) for x in res["n_list"]],
+        "num_points_per_set": [int(x) for x in res["n_list"]],
+        "dimension_d": int(res["dim"]),
+        "p_opt": float(res["p_opt"]),
+        "q_eval": [float(x) for x in res["q_eval"]],
+        "trials_per_n": int(res["trials"]),
+        "seed_base": int(res["seed"]),
+        "domain": str(res["domain"]),
+        "methods_used": ["hungarian"],
+        "all_optimality_certified": True,
+        "npz_output": str(args.out),
+    }
+    Path(out_json).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
 
 
 def cmd_plot_sweep(args: argparse.Namespace) -> None:
@@ -114,6 +162,7 @@ def cmd_plot_sweep(args: argparse.Namespace) -> None:
         title=title_norm,
         out=args.out_norm,
         quantiles=(qlo, qhi),
+        error_bars=args.error_bars,
     )
 
     title_conc = f"Concentration proxy std/mean (dim={dim}, p_opt={p_opt:g})"
@@ -168,6 +217,27 @@ def cmd_edge_dist(args: argparse.Namespace) -> None:
         "seed": args.seed,
     }
     save_npz(args.out, arrays={"edge_lengths_scaled": pooled}, params=params)
+
+    out_json = args.out_json or str(Path(args.out).with_suffix(".json"))
+    summary = {
+        "notes": [
+            "Pooled edge-length distribution under p-optimal exact bipartite matching.",
+            "Edge lengths are scaled by n^(1/d) for comparability across n.",
+        ],
+        "problem": "edge_dist",
+        "n": int(args.n),
+        "dimension_d": int(args.dim),
+        "p_opt": float(args.p_opt),
+        "trials": int(args.trials),
+        "seed": int(args.seed),
+        "bins": int(args.bins),
+        "ccdf": bool(args.ccdf),
+        "npz_output": str(args.out),
+        "plot_output": str(args.plot),
+    }
+    Path(out_json).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
 
     plot_edge_dist(
         edge_lengths=pooled,

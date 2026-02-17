@@ -30,3 +30,8 @@ def edge_lengths_given_perm(x: np.ndarray, y: np.ndarray, sigma: np.ndarray) -> 
     dif = x - y[sigma]
     return np.linalg.norm(dif, axis=1)
 
+
+def bipartite_matching_cost_exact(x: np.ndarray, y: np.ndarray, p: float = 1.0) -> float:
+    """Convenience wrapper: solve exactly and return the optimal p-cost."""
+    sigma = solve_perm_exact(x, y, p=p)
+    return eval_cost_given_perm(x, y, sigma, q=p)
