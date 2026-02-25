@@ -12,6 +12,22 @@ pip install -U pip
 pip install -e ".[dev]"
 ```
 
+## Quickstart (local scripts)
+
+Two local-friendly bash scripts are included (no `sbatch`/Slurm):
+
+```bash
+./experiments/matching/run_sweep.sh
+./experiments/tsp/run_sweep.sh
+```
+
+Each script exposes simple overrides via env vars (e.g. `N_LIST`, `TRIALS`, `OUT`):
+
+```bash
+N_LIST=64,128,256 TRIALS=50 ./experiments/matching/run_sweep.sh
+DIM=5 Q_EVAL=4,5,6 ./experiments/tsp/run_sweep.sh
+```
+
 ## CLI overview
 
 ```bash
@@ -94,4 +110,6 @@ you can override it with `--out-json`.
 - `src/rempf/cli/`: command-line interfaces
 - `src/rempf/plots/`: plotting utilities
 - `src/rempf/io/`: save/load helpers for `.npz`
+- `experiments/matching/`: local matching sweep scripts
+- `experiments/tsp/`: local TSP sweep scripts
 - `tests/`: tests
