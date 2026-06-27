@@ -32,7 +32,8 @@ results/*
 
 # Logs
 *.log
-logs/
+logs/*
+!logs/.gitkeep
 
 # Figures
 figs/

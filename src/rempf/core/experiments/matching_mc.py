@@ -30,13 +30,12 @@ def run_matching_mc(cfg: MatchMCConfig) -> Dict[str, Any]:
         trial_iter = tqdm(trial_iter, desc=f"match trials n={cfg.n}", leave=False)
 
     for t in trial_iter:
-        # for now: cube only; torus can be added later in distance metric
         x = sample_uniform(cfg.n, cfg.dim, rng=rng)
         y = sample_uniform(cfg.n, cfg.dim, rng=rng)
 
-        sigma = solve_perm_exact(x, y, p=cfg.p_opt)
+        sigma = solve_perm_exact(x, y, p=cfg.p_opt, domain=cfg.domain)
         for j, q in enumerate(cfg.q_eval):
-            costs[t, j] = eval_cost_given_perm(x, y, sigma, q=q)
+            costs[t, j] = eval_cost_given_perm(x, y, sigma, q=q, domain=cfg.domain)
 
     return {
         "costs": costs,  # (trials, nq)

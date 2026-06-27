@@ -30,7 +30,7 @@ def add_match_subparser(sub):
     sweep.add_argument("--n-list", type=str, required=True, help="Comma-separated list of n, e.g. 50,80,120")
     sweep.add_argument("--trials", type=int, default=20)
     sweep.add_argument("--seed", type=int, default=0)
-    sweep.add_argument("--domain", choices=["cube"], default="cube")
+    sweep.add_argument("--domain", choices=["cube", "torus"], default="cube")
     sweep.add_argument("--out", type=str, required=True)
     sweep.add_argument("--progress", action="store_true", help="Show progress bars")
     sweep.add_argument(
@@ -63,6 +63,7 @@ def add_match_subparser(sub):
     ed.add_argument("--n", type=int, required=True)
     ed.add_argument("--dim", type=int, default=2)
     ed.add_argument("--p-opt", type=float, required=True)
+    ed.add_argument("--domain", choices=["cube", "torus"], default="cube")
     ed.add_argument("--trials", type=int, default=10)
     ed.add_argument("--seed", type=int, default=0)
     ed.add_argument("--out", type=str, required=True, help="Output .npz (stores pooled edge lengths)")
@@ -198,8 +199,8 @@ def cmd_edge_dist(args: argparse.Namespace) -> None:
     for t in range(args.trials):
         x = sample_uniform(args.n, args.dim, rng=rng)
         y = sample_uniform(args.n, args.dim, rng=rng)
-        sigma = solve_perm_exact(x, y, p=float(args.p_opt))
-        ell = edge_lengths_given_perm(x, y, sigma)
+        sigma = solve_perm_exact(x, y, p=float(args.p_opt), domain=args.domain)
+        ell = edge_lengths_given_perm(x, y, sigma, domain=args.domain)
 
         # normalize by typical spacing ~ n^{-1/d}
         ell_scaled = ell * (args.n ** (1.0 / args.dim))
@@ -215,6 +216,7 @@ def cmd_edge_dist(args: argparse.Namespace) -> None:
         "p_opt": float(args.p_opt),
         "trials": args.trials,
         "seed": args.seed,
+        "domain": args.domain,
     }
     save_npz(args.out, arrays={"edge_lengths_scaled": pooled}, params=params)
 
@@ -230,6 +232,7 @@ def cmd_edge_dist(args: argparse.Namespace) -> None:
         "p_opt": float(args.p_opt),
         "trials": int(args.trials),
         "seed": int(args.seed),
+        "domain": str(args.domain),
         "bins": int(args.bins),
         "ccdf": bool(args.ccdf),
         "npz_output": str(args.out),
